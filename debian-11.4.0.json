@@ -1,0 +1,145 @@
+{
+  "builders": [
+    {
+      "accelerator": "kvm",
+      "boot_wait": "5s",
+      "boot_command": [
+        "<esc><wait>",
+        "install ",
+        "DEBIAN_FRONTEND=text ",
+        "url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_file`}} ",
+        "auto=true ",
+        "locale=en_US.UTF-8 ",
+        "kbd-chooser/method=us ",
+        "keymap=us ",
+        "hostname={{user `hostname`}} ",
+        "domain={{user `domainname`}} ",
+        "network-console/start=note ",
+        "network-console/password={{user `password`}} ",
+        "network-console/password-again={{user `password`}} ",
+        "passwd/user-password={{user `password`}} ",
+        "passwd/user-password-again={{user `password`}} ",
+        "preseed-md5={{user `preseed_md5sum`}} ",
+        "fb=false ",
+        "debconf/frontend=noninteractive ",
+        "console-setup/ask_detect=false ",
+        "console-keymaps-at/keymap=us ",
+        "grub-installer/bootdev=/dev/sda ",
+        "vga=normal ---",
+        "<enter><wait>"
+      ],
+      "disk_cache": "none",
+      "disk_size": "{{user `disk_size`}}",
+      "format": "qcow2",
+      "headless": false,
+      "host_port_max": 2249,
+      "host_port_min": 2242,
+      "http_directory": "http",
+      "http_port_max": 10499,
+      "http_port_min": 10492,
+      "iso_checksum": "sha256:d490a35d36030592839f24e468a5b818c919943967012037d6ab3d65d030ef7f",
+      "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.4.0-amd64-netinst.iso",
+      "net_device": "virtio-net",
+      "disk_interface": "virtio",
+      "output_directory": "build/{{user `hostname`}}",
+      "qemuargs": [
+        [
+          "-m",
+          "1024M"
+        ],
+        [
+          "-smp",
+          "4"
+        ],
+        [
+          "-netdev",
+          "user,hostfwd=tcp::{{ .SSHHostPort }}-:22,id=forward"
+        ],
+        [
+          "-device",
+          "virtio-net,netdev=forward,id=net0"
+        ]
+      ],
+      "ssh_file_transfer_method": "scp",
+      "ssh_handshake_attempts": "10000",
+      "ssh_password": "{{user `password`}}",
+      "ssh_port": 22,
+      "ssh_timeout": "6000s",
+      "ssh_username": "{{user `user`}}",
+      "type": "qemu",
+      "vm_name": "{{user `image_name`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "destination": "/usr/lib/finish-install.d/93post-install",
+      "direction": "upload",
+      "source": "installer/9Xpost-install",
+      "type": "file"
+    },
+    {
+      "destination": "/sbin/restart_sshd",
+      "direction": "upload",
+      "source": "installer/restart_sshd",
+      "type": "file"
+    },
+    {
+      "inline": [
+        "while [ ! -f /tmp/ready_for_post_install ]",
+        "do",
+        "  sleep 5",
+        "done"
+      ],
+      "type": "shell"
+    },
+    {
+      "destination": "/etc/ssh/sshd_config",
+      "direction": "upload",
+      "source": "installer/chroot_sshd_config",
+      "type": "file"
+    },
+    {
+      "expect_disconnect": true,
+      "inline": [
+        "exec /sbin/restart_sshd"
+      ],
+      "type": "shell"
+    },
+    {
+      "command": "sleep 1",
+      "type": "shell-local"
+    },
+    {
+      "inline": [
+        "DEBIAN_FRONTEND=noninteractive apt-get -qq install python3",
+        "DEBIAN_FRONTEND=noninteractive apt-get -qq install python3-pip",
+        "DEBIAN_FRONTEND=noninteractive apt-get -qq install python3-apt",
+        "DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-sftp-server",
+        "DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client"
+      ],
+      "type": "shell"
+    },
+    {
+      "inline": [
+        "sync"
+      ],
+      "type": "shell"
+    },
+    {
+      "inline": [
+        "touch /tmp/ready_to_shutdown"
+      ],
+      "type": "shell"
+    }
+  ],
+  "variables": {
+    "disk_size": "{{env `DISK_SIZE`}}",
+    "domainname": "{{env `DOMAIN_NAME`}}",
+    "image_dir": "{{env `IMAGE_DIR`}}",
+    "password": "{{env `IMAGE_PASSWORD`}}",
+    "preseed_file": "preseed.cfg",
+    "preseed_md5sum": "9bbfa6cabebf8ed3257ae31a013a1c34",
+    "user": "installer"
+  }
+}
+

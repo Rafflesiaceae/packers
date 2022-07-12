@@ -1,0 +1,17 @@
+#!/bin/sh
+# Packer staged provisioning
+
+# Exit on errors
+set -e
+
+# Notify Packer that the initial (qemu) provisioner is complete
+touch /tmp/ready_for_post_install
+echo Ready for post-install
+
+# Wait for post-install provisioners to complete before shutdown
+while [ ! -f /target/tmp/ready_to_shutdown ]
+do
+  sleep 15
+done
+rm /target/tmp/ready_to_shutdown
+echo Ready for Shutdown

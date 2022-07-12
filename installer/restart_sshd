@@ -1,0 +1,20 @@
+#!/bin/sh
+# Restart `network-console` sshd
+for i in /proc/[0-9]*; do
+  if [ -f ${i}/cmdline ] ; then
+    CMDLINE=$(cat ${i}/cmdline)
+    if [ "/usr/sbin/sshd" = "${CMDLINE}" ] ; then
+      SSHD_PID=$(echo "${i}" | sed 's/\/proc\///')
+      echo "Restarting SSH Daemon [PID: $SSHD_PID]"
+      kill -HUP $SSHD_PID
+    fi
+    if [ "sshd: installer@notty" = "${CMDLINE}" ] ; then
+      SSHD_PID=$(echo "${i}" | sed 's/\/proc\///')
+      echo "Killing SSH Installer session [PID: $SSHD_PID]"
+      # Sleep to avoid reconnection race with the next provisioner
+      sleep 10
+      kill -TERM $SSHD_PID
+    fi
+  fi
+done
+exit 0
