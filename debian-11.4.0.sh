@@ -8,8 +8,6 @@ domain_name=$(echo $host_name | sed 's/\w*\.\(.*\)/\1/')
 host_log=$build_dir/packer/$host_name.log
 image_name="test"
 disk_size=16384
-export image_password=switching_sides
-export packer_key_intERVAL=15ms
 version=0.1.0
 python_interpreter=/usr/bin/python3
 start_time=$(date --rfc-3339="seconds")
@@ -17,6 +15,9 @@ start_time=$(date --rfc-3339="seconds")
 mkdir -p "${build_dir}/packer"
 echo Staring build of ${host_name} at ${start_time} for ${image_name} v${version} | tee "${host_log}"
 
+IMAGE_PASSWORD=switching_sides \
+PACKER_KEY_INTERVAL=15MS \
+PACKER_LOG=1 \
 DEBIAN_FRONTEND=text \
 DEBCONF_DEBUG=${debug} \
 CHECKPOINT_DISABLE=1 \
