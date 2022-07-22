@@ -73,7 +73,7 @@
     {
       "destination": "/usr/lib/finish-install.d/93post-install",
       "direction": "upload",
-      "source": "installer/9Xpost-install",
+      "source": "installation-9Xpost",
       "type": "file"
     },
     {
